@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Quiz Élève</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
 </head>
 <body>
     <h2>Connexion Élève</h2>
@@ -22,7 +21,7 @@
     </div>
 
 <script>
-var socket = io();
+var socket = io({transports: ['websocket']});
 var email = "";
 
 function connexion() {
@@ -45,3 +44,4 @@ function envoyer(reponse) {
 </script>
 </body>
 </html>
+
