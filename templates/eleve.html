@@ -2,22 +2,67 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Élève</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
         .question-container {
             margin-top: 20px;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
+            background-color: #f9f9f9;
         }
         .reponse-btn {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 16px;
+            margin: 10px 5px;
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .reponse-btn:hover {
+            background-color: #45a049;
         }
         .hidden {
             display: none;
+        }
+        input {
+            padding: 10px;
+            margin: 5px;
+            width: calc(100% - 22px);
+            max-width: 300px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0b7dda;
+        }
+        .message {
+            margin-top: 10px;
+            padding: 10px;
+            color: #2196F3;
+            font-weight: bold;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
         }
     </style>
 </head>
@@ -40,7 +85,8 @@
             <button class="reponse-btn" onclick="envoyer('C')">C</button>
             <button class="reponse-btn" onclick="envoyer('D')">D</button>
         </div>
-        <div id="message"></div>
+        <div id="message" class="message"></div>
+        <div id="connection-status"></div>
     </div>
 
     <script>
@@ -48,20 +94,26 @@
         transports: ['websocket'],
         upgrade: false,
         reconnection: true,
-        reconnectionAttempts: 5
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000
     });
     var email = "";
 
     function connexion() {
         email = document.getElementById('email').value;
-        if (!email || !document.getElementById('prenom').value || !document.getElementById('nom').value) {
+        var prenom = document.getElementById('prenom').value;
+        var nom = document.getElementById('nom').value;
+        
+        if (!email || !prenom || !nom) {
             alert("Veuillez remplir tous les champs");
             return;
         }
         
         socket.emit('enregistrer_infos', {
-            prenom: document.getElementById('prenom').value,
-            nom: document.getElementById('nom').value,
+            prenom: prenom,
+            nom: nom,
             email: email
         });
         
@@ -79,12 +131,26 @@
         document.getElementById('message').innerText = "Réponse " + reponse + " envoyée";
     }
 
+    // Gestion des événements de connexion
     socket.on('connect', function() {
         console.log('Connecté au serveur');
+        document.getElementById('connection-status').innerHTML = '<span style="color: green;">Connecté au serveur</span>';
+    });
+
+    socket.on('disconnect', function() {
+        console.log('Déconnecté du serveur');
+        document.getElementById('connection-status').innerHTML = '<span style="color: red;">Déconnecté du serveur</span>';
     });
 
     socket.on('connect_error', function(error) {
         console.error('Erreur de connexion:', error);
+        document.getElementById('connection-status').innerHTML = '<span style="color: red;">Erreur de connexion au serveur</span>';
+    });
+
+    // Tentative de reconnexion automatique
+    socket.io.on("reconnect_attempt", function() {
+        console.log('Tentative de reconnexion...');
+        document.getElementById('connection-status').innerHTML = '<span style="color: orange;">Tentative de reconnexion...</span>';
     });
     </script>
 </body>

@@ -2,88 +2,254 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Enseignant</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
     <style>
-        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-        .correct { background-color: lightgreen; }
-        .incorrect { background-color: lightcoral; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        th, td { 
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        .correct {
+            background-color: #c8e6c9;
+        }
+        .incorrect {
+            background-color: #ffcdd2;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.danger {
+            background-color: #f44336;
+        }
+        button.danger:hover {
+            background-color: #d32f2f;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        #connection-status {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
-    <h2>Poser une question</h2>
-    Numéro Question : <input id="numero_question" type="number" min="1" max="120">
-    Bonne réponse : 
-    <select id="bonne_reponse">
-        <option value="A">A</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D</option>
-    </select>
-    <button onclick="poser()">Envoyer</button>
+    <div class="container">
+        <h1>Tableau de bord Enseignant</h1>
+        
+        <div id="connection-status"></div>
+        
+        <div class="panel">
+            <h2>Poser une question</h2>
+            <div>
+                Numéro Question : 
+                <input id="numero_question" type="number" min="1" max="120" value="1">
+                Bonne réponse : 
+                <select id="bonne_reponse">
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <button onclick="poser()">Envoyer la question</button>
+            </div>
+        </div>
 
-    <h2>Suivi des élèves</h2>
-    <table id="eleves"></table>
+        <div class="panel">
+            <h2>Gestion de la séance</h2>
+            <button onclick="terminerSeance()">Terminer la séance (sauvegarder)</button>
+            <button onclick="nouvelleSeance()" class="danger">Nouvelle séance (réinitialiser)</button>
+        </div>
 
-    <h2>Gestion de la séance</h2>
-    <button onclick="terminerSeance()">Terminer la séance (sauvegarder)</button>
-    <button onclick="nouvelleSeance()">Nouvelle séance (réinitialiser)</button>
+        <div class="panel">
+            <h2>Suivi des élèves</h2>
+            <div id="nombre-eleves">Aucun élève connecté</div>
+            <div class="table-container">
+                <table id="eleves">
+                    <tr>
+                        <th>Élève</th>
+                        <th>Score</th>
+                        <th>Réponses</th>
+                    </tr>
+                    <tr>
+                        <td colspan="3">En attente d'élèves...</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
 
-<script>
-var socket = io({
-    transports: ['websocket'],
-    upgrade: false,
-    reconnection: true,
-    reconnectionAttempts: 5
-});
-
-
-function poser() {
-    socket.emit('poser_question', {
-        numero_question: document.getElementById('numero_question').value,
-        bonne_reponse: document.getElementById('bonne_reponse').value
+    <script>
+    var socket = io({
+        transports: ['websocket'],
+        upgrade: false,
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000
     });
-}
 
-function terminerSeance() {
-    socket.emit('sauvegarder');
-    alert("Sauvegarde demandée ! Vérifiez dans votre dossier.");
-}
-
-function nouvelleSeance() {
-    if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les élèves ?")) {
-        socket.emit('reset');
-        alert("Nouvelle séance prête !");
+    // Fonction pour envoyer une question
+    function poser() {
+        var numeroQuestion = document.getElementById('numero_question').value;
+        var bonneReponse = document.getElementById('bonne_reponse').value;
+        
+        if (!numeroQuestion) {
+            alert("Veuillez entrer un numéro de question");
+            return;
+        }
+        
+        socket.emit('poser_question', {
+            numero_question: numeroQuestion,
+            bonne_reponse: bonneReponse
+        });
+        
+        // Incrémenter automatiquement le numéro de question pour la prochaine
+        document.getElementById('numero_question').value = parseInt(numeroQuestion) + 1;
     }
-}
 
-socket.on('maj_eleves', function(eleves) {
-    var tableau = '<tr><th>Score - Prénom Nom</th>';
-    for (var i = 1; i <= 120; i++) {
-        tableau += '<th>' + i + '</th>';
+    // Fonction pour terminer et sauvegarder la séance
+    function terminerSeance() {
+        socket.emit('sauvegarder');
+        alert("Sauvegarde en cours...");
     }
-    tableau += '</tr>';
 
-    for (var email in eleves) {
-        var eleve = eleves[email];
-        var score = eleve.score || 0;
-        tableau += '<tr><td>' + score + ' - ' + eleve.prenom + ' ' + eleve.nom + '</td>';
-        for (var i = 1; i <= 120; i++) {
-            var cell = eleve.reponses[i];
-            if (cell) {
-                var classe = cell.correct ? "correct" : "incorrect";
-                tableau += '<td class="' + classe + '">' + cell.reponse + '</td>';
-            } else {
-                tableau += '<td></td>';
+    // Fonction pour commencer une nouvelle séance
+    function nouvelleSeance() {
+        if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les élèves et leurs scores ?")) {
+            socket.emit('reset');
+            alert("Nouvelle séance prête !");
+        }
+    }
+
+    // Mise à jour de la liste des élèves
+    socket.on('maj_eleves', function(eleves) {
+        var eleveCount = Object.keys(eleves).length;
+        document.getElementById('nombre-eleves').innerText = eleveCount + " élève(s) connecté(s)";
+        
+        if (eleveCount === 0) {
+            document.getElementById('eleves').innerHTML = '<tr><th>Élève</th><th>Score</th><th>Réponses</th></tr><tr><td colspan="3">En attente d\'élèves...</td></tr>';
+            return;
+        }
+        
+        var tableau = '<tr><th>Élève</th><th>Score</th>';
+        
+        // Trouver le numéro de question le plus élevé
+        var maxQuestion = 0;
+        for (var email in eleves) {
+            var reponses = eleves[email].reponses;
+            for (var q in reponses) {
+                var questionNum = parseInt(q);
+                if (questionNum > maxQuestion) {
+                    maxQuestion = questionNum;
+                }
             }
         }
+        
+        // Ajouter les en-têtes de colonnes pour chaque question
+        for (var i = 1; i <= maxQuestion; i++) {
+            tableau += '<th>Q' + i + '</th>';
+        }
         tableau += '</tr>';
-    }
-    document.getElementById('eleves').innerHTML = tableau;
-});
-</script>
+
+        // Ajouter une ligne pour chaque élève
+        for (var email in eleves) {
+            var eleve = eleves[email];
+            var score = eleve.score || 0;
+            tableau += '<tr><td>' + eleve.prenom + ' ' + eleve.nom + '</td><td>' + score + '</td>';
+            
+            // Ajouter les réponses pour chaque question
+            for (var i = 1; i <= maxQuestion; i++) {
+                var cell = eleve.reponses[i];
+                if (cell) {
+                    var classe = cell.correct ? "correct" : "incorrect";
+                    tableau += '<td class="' + classe + '">' + cell.reponse + '</td>';
+                } else {
+                    tableau += '<td></td>';
+                }
+            }
+            tableau += '</tr>';
+        }
+        document.getElementById('eleves').innerHTML = tableau;
+    });
+
+    // Événement pour la confirmation de sauvegarde
+    socket.on('sauvegarde_complete', function(data) {
+        alert("Sauvegarde terminée! Fichier: " + data.filename);
+    });
+
+    // Gestion des événements de connexion
+    socket.on('connect', function() {
+        console.log('Connecté au serveur');
+        document.getElementById('connection-status').innerHTML = '<div style="background-color: #dff0d8; color: #3c763d;">Connecté au serveur</div>';
+    });
+
+    socket.on('disconnect', function() {
+        console.log('Déconnecté du serveur');
+        document.getElementById('connection-status').innerHTML = '<div style="background-color: #f2dede; color: #a94442;">Déconnecté du serveur</div>';
+    });
+
+    socket.on('connect_error', function(error) {
+        console.error('Erreur de connexion:', error);
+        document.getElementById('connection-status').innerHTML = '<div style="background-color: #f2dede; color: #a94442;">Erreur de connexion au serveur</div>';
+    });
+
+    socket.io.on("reconnect_attempt", function() {
+        console.log('Tentative de reconnexion...');
+        document.getElementById('connection-status').innerHTML = '<div style="background-color: #fcf8e3; color: #8a6d3b;">Tentative de reconnexion...</div>';
+    });
+    </script>
 </body>
 </html>
-
-
