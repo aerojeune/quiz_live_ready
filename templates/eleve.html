@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Élève</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+</head>
+<body>
+    <h2>Connexion Élève</h2>
+    <input id="prenom" placeholder="Prénom">
+    <input id="nom" placeholder="Nom">
+    <input id="email" placeholder="Email">
+    <button onclick="connexion()">Se connecter</button>
+
+    <div id="zone_question" style="display:none;">
+        <h2 id="question"></h2>
+        <button onclick="envoyer('A')">A</button>
+        <button onclick="envoyer('B')">B</button>
+        <button onclick="envoyer('C')">C</button>
+        <button onclick="envoyer('D')">D</button>
+    </div>
+
+<script>
+var socket = io();
+var email = "";
+
+function connexion() {
+    email = document.getElementById('email').value;
+    socket.emit('enregistrer_infos', {
+        prenom: document.getElementById('prenom').value,
+        nom: document.getElementById('nom').value,
+        email: email
+    });
+    document.getElementById('zone_question').style.display = 'block';
+}
+
+socket.on('nouvelle_question', function(data) {
+    document.getElementById('question').innerText = "Question " + data.numero_question;
+});
+
+function envoyer(reponse) {
+    socket.emit('envoyer_reponse', { email: email, reponse: reponse });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Enseignant</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+    <style>
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+        .correct { background-color: lightgreen; }
+        .incorrect { background-color: lightcoral; }
+    </style>
+</head>
+<body>
+    <h2>Poser une question</h2>
+    Numéro Question : <input id="numero_question" type="number" min="1" max="120">
+    Bonne réponse : 
+    <select id="bonne_reponse">
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+    </select>
+    <button onclick="poser()">Envoyer</button>
+
+    <h2>Suivi des élèves</h2>
+    <table id="eleves"></table>
+
+    <h2>Gestion de la séance</h2>
+    <button onclick="terminerSeance()">Terminer la séance (sauvegarder)</button>
+    <button onclick="nouvelleSeance()">Nouvelle séance (réinitialiser)</button>
+
+<script>
+var socket = io();
+
+function poser() {
+    socket.emit('poser_question', {
+        numero_question: document.getElementById('numero_question').value,
+        bonne_reponse: document.getElementById('bonne_reponse').value
+    });
+}
+
+function terminerSeance() {
+    socket.emit('sauvegarder');
+    alert("Sauvegarde demandée ! Vérifiez dans votre dossier.");
+}
+
+function nouvelleSeance() {
+    if (confirm("Êtes-vous sûr de vouloir réinitialiser tous les élèves ?")) {
+        socket.emit('reset');
+        alert("Nouvelle séance prête !");
+    }
+}
+
+socket.on('maj_eleves', function(eleves) {
+    var tableau = '<tr><th>Score - Prénom Nom</th>';
+    for (var i = 1; i <= 120; i++) {
+        tableau += '<th>' + i + '</th>';
+    }
+    tableau += '</tr>';
+
+    for (var email in eleves) {
+        var eleve = eleves[email];
+        var score = eleve.score || 0;
+        tableau += '<tr><td>' + score + ' - ' + eleve.prenom + ' ' + eleve.nom + '</td>';
+        for (var i = 1; i <= 120; i++) {
+            var cell = eleve.reponses[i];
+            if (cell) {
+                var classe = cell.correct ? "correct" : "incorrect";
+                tableau += '<td class="' + classe + '">' + cell.reponse + '</td>';
+            } else {
+                tableau += '<td></td>';
+            }
+        }
+        tableau += '</tr>';
+    }
+    document.getElementById('eleves').innerHTML = tableau;
+});
+</script>
+</body>
+</html>
+
+
