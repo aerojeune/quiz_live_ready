@@ -1,24 +1,91 @@
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz Élève</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        .question-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .reponse-btn {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quiz en direct</h1>
+    
+    <div id="login-form">
+        <h2>Connexion</h2>
+        <input type="text" id="prenom" placeholder="Prénom" required>
+        <input type="text" id="nom" placeholder="Nom" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <button onclick="connexion()">Se connecter</button>
+    </div>
+    
+    <div id="zone_question" class="hidden question-container">
+        <h2 id="question">En attente de question...</h2>
+        <div>
+            <button class="reponse-btn" onclick="envoyer('A')">A</button>
+            <button class="reponse-btn" onclick="envoyer('B')">B</button>
+            <button class="reponse-btn" onclick="envoyer('C')">C</button>
+            <button class="reponse-btn" onclick="envoyer('D')">D</button>
+        </div>
+        <div id="message"></div>
+    </div>
 
-<script>
-var socket = io('/', { transports: ['websocket'] });
-var email = "";
-
-function connexion() {
-    email = document.getElementById('email').value;
-    socket.emit('enregistrer_infos', {
-        prenom: document.getElementById('prenom').value,
-        nom: document.getElementById('nom').value,
-        email: email
+    <script>
+    var socket = io({
+        transports: ['websocket'],
+        upgrade: false,
+        reconnection: true,
+        reconnectionAttempts: 5
     });
-    document.getElementById('zone_question').style.display = 'block';
-}
+    var email = "";
 
-socket.on('nouvelle_question', function(data) {
-    document.getElementById('question').innerText = "Question " + data.numero_question;
-});
+    function connexion() {
+        email = document.getElementById('email').value;
+        if (!email || !document.getElementById('prenom').value || !document.getElementById('nom').value) {
+            alert("Veuillez remplir tous les champs");
+            return;
+        }
+        
+        socket.emit('enregistrer_infos', {
+            prenom: document.getElementById('prenom').value,
+            nom: document.getElementById('nom').value,
+            email: email
+        });
+        
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('zone_question').classList.remove('hidden');
+    }
 
-function envoyer(reponse) {
-    socket.emit('envoyer_reponse', { email: email, reponse: reponse });
-}
-</script>
+    socket.on('nouvelle_question', function(data) {
+        document.getElementById('question').innerText = "Question " + data.numero_question;
+        document.getElementById('message').innerText = "";
+    });
+
+    function envoyer(reponse) {
+        socket.emit('envoyer_reponse', { email: email, reponse: reponse });
+        document.getElementById('message').innerText = "Réponse " + reponse + " envoyée";
+    }
+
+    socket.on('connect', function() {
+        console.log('Connecté au serveur');
+    });
+
+    socket.on('connect_error', function(error) {
+        console.error('Erreur de connexion:', error);
+    });
+    </script>
+</body>
+</html>

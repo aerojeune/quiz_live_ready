@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz en Direct</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .btn {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 30px;
+            font-size: 18px;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .btn.teacher {
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quiz en Direct</h1>
+        <p>Choisissez votre rôle:</p>
+        
+        <a href="/eleve" class="btn">Je suis un élève</a>
+        <a href="/enseignant" class="btn teacher">Je suis l'enseignant</a>
+    </div>
+</body>
+</html>

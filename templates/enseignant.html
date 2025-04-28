@@ -31,7 +31,12 @@
     <button onclick="nouvelleSeance()">Nouvelle séance (réinitialiser)</button>
 
 <script>
-var socket = io('/', { transports: ['websocket'] });
+var socket = io({
+    transports: ['websocket'],
+    upgrade: false,
+    reconnection: true,
+    reconnectionAttempts: 5
+});
 
 
 function poser() {
