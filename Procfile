@@ -1,3 +1,4 @@
-web: uvicorn app:app --host 0.0.0.0 --port 10000
+web: gunicorn --worker-class eventlet -w 1 app:app
+
 
 
